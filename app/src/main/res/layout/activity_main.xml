@@ -2,6 +2,7 @@
 <RelativeLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
+        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingLeft="@dimen/activity_horizontal_margin"
@@ -9,5 +10,90 @@
         android:paddingTop="@dimen/activity_vertical_margin"
         android:paddingBottom="@dimen/activity_vertical_margin"
         tools:context="edu.sjsu.cmpe.mtaas_android.MainActivity">
+    <!-- topbar -->
+    <LinearLayout
+            android:id="@+id/topbar"
+            android:layout_alignParentTop="true"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+    >
+        <TextView
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:gravity="left|center_vertical"
+                android:paddingLeft="10dp"
+                android:textColor="@color/black"
+                android:text="ADB OVER WIFI"
+                android:textSize="20sp"
+        />
+        <View
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:background="@color/blue_holo"
+        />
+    </LinearLayout>
+
+
+    <!-- main -->
+    <RelativeLayout
+            android:layout_weight="1"
+            android:layout_below="@+id/topbar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+    >
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:orientation="vertical"
+        >
+            <LinearLayout
+                    android:id="@+id/toggleLayout"
+                    android:layout_gravity="center"
+                    android:layout_width="220dp"
+                    android:layout_height="60dp"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+            >
+                <TextView
+                        android:id="@+id/toggleLeft"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray_dark"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="OFF"
+                        android:textColor="@color/white"
+                        android:textSize="22sp"
+                />
+                <TextView
+                        android:id="@+id/toggleRight"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/gray_light"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text=""
+                        android:textColor="@color/white"
+                        android:textSize="22sp"
+                />
+            </LinearLayout>
+
+            <TextView
+                    android:id="@+id/hint"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="10dp"
+                    android:layout_width="240dp"
+                    android:layout_height="wrap_content"
+                    android:text="adb connect 192.168.100.100:5555"
+                    android:textColor="@color/gray_dark"
+                    android:textSize="14sp"
+                    android:gravity="center"
+            />
+        </LinearLayout>
+    </RelativeLayout>
 
 </RelativeLayout>
