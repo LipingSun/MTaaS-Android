@@ -13,10 +13,6 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.List;
 
-
-/**
- * Created by Liping on 8/14/16.
- */
 public class AdbWiFi {
     private final static String TAG = "adbwifi.utility";
 
@@ -93,12 +89,15 @@ public class AdbWiFi {
             p = Runtime.getRuntime().exec("su");
 
             DataOutputStream os = new DataOutputStream(p.getOutputStream());
-            os.writeBytes("setprop service.adb.tcp.port " + String.valueOf(getPort()) + "\n");
-            os.writeBytes("stop adbd\n");
-
             if (status) {
-                os.writeBytes("start adbd\n");
+                os.writeBytes("setprop service.adb.tcp.port " + String.valueOf(getPort()) + "\n");
+            } else {
+                os.writeBytes("setprop service.adb.tcp.port -1" + "\n");
             }
+
+            os.writeBytes("stop adbd\n");
+            os.writeBytes("start adbd\n");
+
             os.writeBytes("exit\n");
             os.flush();
 
