@@ -7,13 +7,14 @@ import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
-    private final static String TAG = "adbwifi";
+    private final static String TAG = "MainActivity";
 
     private LinearLayout toggleButton;
     private TextView hint, toggleLeft, toggleRight;
@@ -24,9 +25,27 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        //RequestQueue requestQueue = Volley.newRequestQueue(this);
+        //String url = "http://cdn.flowplayer.org/272367/129785.json";
+        ////String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com";
+        //JsonObjectRequest testRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+        //        new Response.Listener<JSONObject>() {
+        //            @Override
+        //            public void onResponse(JSONObject response) {
+        //                Log.d(TAG, response.toString());
+        //            }
+        //        },
+        //        new Response.ErrorListener() {
+        //            @Override
+        //            public void onErrorResponse(VolleyError error) {
+        //                Log.e(TAG, error.toString());
+        //            }
+        //        }
+        //);
+        //requestQueue.add(testRequest);
         initVal();
         init();
+        PortForward.init(MainActivity.this);
     }
 
     @Override
@@ -35,7 +54,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStop() {
+        //PortForward.disconnect();
+        super.onStop();
+    }
+
+    @Override
     public void onDestroy() {
+        Log.d(TAG, "onDestroy");
         unregisterReceiver(wifiStateReceiver);
         super.onDestroy();
     }
@@ -103,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View v) {
             if (AdbWiFi.isWifiConnected(MainActivity.this)) {
                 // try switch
-                boolean ret = AdbWiFi.setAdbWifiStatus(!toggleStatus);
+                boolean ret = AdbWiFi.setAdbWifiStatus(!toggleStatus) && PortForward.setConnection(MainActivity.this, !toggleStatus);
                 if (ret) {
                     // switch successfully
                     toggleStatus = !toggleStatus;
@@ -136,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
             toggleLeft.setBackgroundColor(getResources().getColor(R.color.gray_light));
             toggleRight.setText("ON");
             toggleRight.setBackgroundColor(getResources().getColor(R.color.blue_holo));
-            hint.setText("adb connect " + AdbWiFi.getIp() + ":" + String.valueOf(AdbWiFi.getPort()));
+            hint.setText("adb connect " + PortForward.ngrokURL);
         }
     }
 }
