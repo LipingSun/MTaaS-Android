@@ -44,8 +44,13 @@ public class MainActivity extends AppCompatActivity {
         //);
         //requestQueue.add(testRequest);
         initVal();
+        //PortForward.init(MainActivity.this);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         init();
-        PortForward.init(MainActivity.this);
     }
 
     @Override
