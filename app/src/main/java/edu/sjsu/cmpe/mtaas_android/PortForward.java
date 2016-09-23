@@ -59,6 +59,7 @@ public class PortForward {
         //if (isConnected()) {
         //    return true;
         //}
+        init(context);
         String ngrokPath = context.getFilesDir().getAbsolutePath() + "/ngrok";
         runtime = Runtime.getRuntime();
         Process process = runtime.exec("su");
@@ -66,7 +67,7 @@ public class PortForward {
         DataOutputStream stdin = new DataOutputStream(process.getOutputStream());
         stdin.writeBytes("chmod 777 " + ngrokPath + "\n");
         stdin.writeBytes("HOME=" + context.getFilesDir().getAbsolutePath() + "\n");
-        stdin.writeBytes("." + ngrokPath + " authtoken " + "\n");
+        stdin.writeBytes("." + ngrokPath + " authtoken 6KHrji6yCPTL5axiYrDEx_jm3AEJBzvz4sE4uSnFmT" + "\n");
         stdin.writeBytes("." + ngrokPath + " tcp -log-level debug -log stdout 5555" + "\n");
         // TODO: cleanup stream
 
