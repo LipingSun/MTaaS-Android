@@ -24,7 +24,7 @@
                 android:text="Email"
                 android:id="@+id/emailTxtView"
                 android:layout_gravity="center_horizontal"
-                android:layout_weight="0.04" />
+                android:layout_weight="0.08" />
 
         <EditText
                 android:layout_width="match_parent"
@@ -32,7 +32,7 @@
                 android:inputType="textEmailAddress"
                 android:ems="10"
                 android:id="@+id/emailEditTxt"
-                android:layout_weight="0.04"
+                android:layout_weight="0.08"
                 android:layout_gravity="center_horizontal" />
 
         <TextView
@@ -48,24 +48,37 @@
                 android:inputType="textEmailAddress"
                 android:ems="10"
                 android:id="@+id/pwdEditTxt"
-                android:layout_weight="0.04" />
+                android:layout_weight="0.08" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.08" />
 
         <Button
-                android:layout_width="wrap_content"
+                android:layout_width="140dp"
                 android:layout_height="wrap_content"
                 android:text="Login"
                 android:id="@+id/loginBtn"
                 android:layout_gravity="center_horizontal"
-                android:layout_weight="0.04"
-                android:onClick="login"/>
+            android:onClick="login"
+            android:background="#302e99"
+            android:textColor="#faf9f9"
+            android:layout_weight="0.05"/>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.08" />
 
         <Button
-                android:layout_width="wrap_content"
+                android:layout_width="140dp"
                 android:layout_height="wrap_content"
                 android:text="Register"
                 android:id="@+id/registerBtn"
                 android:layout_gravity="center_horizontal"
-                android:layout_weight="0.04"
-                android:onClick="register"/>
+            android:onClick="register"
+            android:background="#feb2cb"
+            android:layout_weight="0.05" />
     </LinearLayout>
 </RelativeLayout>

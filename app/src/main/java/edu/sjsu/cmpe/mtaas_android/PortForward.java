@@ -10,16 +10,17 @@ public class PortForward {
 
     private final static String TAG = "PortForward";
 
-    public static final String PREFS_NAME = "PrefsFile";
+    //public static final String PREFS_NAME = "PrefsFile";
 
-    private static SharedPreferences settings;
+   // private static SharedPreferences settings;
 
     public static String ngrokURL = "null";
 
     private static Runtime runtime;
 
     public static boolean init(Context context) {
-        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+       // settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        ShareValues.init(context);
         File ngrokFile = new File(context.getFilesDir(), "ngrok");
         if (!ngrokFile.exists()) {
             InputStream ngrokInputStream = null;
@@ -76,12 +77,12 @@ public class PortForward {
             if (line.contains("URL:tcp://")) {
                 ngrokURL = line.substring(line.indexOf("URL:tcp://") + 10, line.indexOf(" Proto:tcp"));
                 Log.d(TAG, ngrokURL);
-                SharedPreferences.Editor prefEditor = settings.edit();
+                SharedPreferences.Editor prefEditor = ShareValues.settings.edit();
                 prefEditor.putString("ngrok_url", ngrokURL);
                 prefEditor.apply();
                 return true;
             } else if (line.contains("limited to 1 simultaneous ngrok client session")) {
-                ngrokURL = settings.getString("ngrok_url", "null");
+                ngrokURL = ShareValues.settings.getString("ngrok_url", "null");
                 return true;
             }
         }
