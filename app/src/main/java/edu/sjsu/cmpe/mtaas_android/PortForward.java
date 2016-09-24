@@ -9,19 +9,14 @@ public class PortForward {
 
     private final static String TAG = "PortForward";
 
-    //public static final String PREFS_NAME = "PrefsFile";
-
-   // private static SharedPreferences settings;
-
     public static String ngrokURL = "null";
 
     private static Runtime runtime;
 
     public static boolean init(Context context) {
-       // settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         File ngrokFile = new File(context.getFilesDir(), "ngrok");
         if (!ngrokFile.exists()) {
-            InputStream ngrokInputStream = null;
+            InputStream ngrokInputStream;
             try {
                 ngrokInputStream = context.getAssets().open("ngrok");
                 OutputStream ngrokOutputStream = context.openFileOutput(ngrokFile.getName(), Context.MODE_PRIVATE);
