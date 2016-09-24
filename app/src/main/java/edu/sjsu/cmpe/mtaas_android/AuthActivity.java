@@ -190,7 +190,6 @@ public class AuthActivity extends AppCompatActivity {
         queue.add(jsObjRequest);
     }
 
-
     public boolean validate(String email, String pwd) {
         // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(this);
@@ -252,7 +251,6 @@ public class AuthActivity extends AppCompatActivity {
         queue.add(jsObjRequest);
         return true;
     }
-
 
     public void getInfos() {
         String str = "";
