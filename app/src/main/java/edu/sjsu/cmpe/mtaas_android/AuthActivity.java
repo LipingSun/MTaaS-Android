@@ -18,16 +18,9 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.android.volley.AuthFailureError;
-import com.android.volley.NetworkResponse;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
+import com.android.volley.*;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -46,12 +39,6 @@ public class AuthActivity extends AppCompatActivity {
     private final static String TAG = "AuthActivity";
     private final static JSONObject device = new JSONObject();
 
-
-    // public static final String PREFS_NAME = "TokenPrefsFile";
-    public static String token = "null";
-    public static String owner = "null";
-    // private static SharedPreferences settings;
-
     public static final int REQUEST_READ_PHONE_STATE = 1;
 
     @Override
@@ -63,13 +50,7 @@ public class AuthActivity extends AppCompatActivity {
         e_pwd = (EditText) findViewById(R.id.pwdEditTxt);
 
         System.out.println("start");
-
-        ShareValues.init(AuthActivity.this);
     }
-
-    /*public void init(Context context) {
-        settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-    }*/
 
     public void connect() {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE);
@@ -84,20 +65,12 @@ public class AuthActivity extends AppCompatActivity {
 
         String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/api/v1/device";
 
-        Log.d("owner", ShareValues.getValue("owner", "null"));
-        Log.d("token", ShareValues.getValue("token", "null"));
-        Log.d("owner", owner);
-        Log.d("token", token);
-
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(
-                Request.Method.POST, url, device,
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.POST, url, device,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
                         System.out.println("Response: " + response.toString());
-
                         Toast.makeText(AuthActivity.this, "connected to server", Toast.LENGTH_LONG).show();
-
                     }
                 },
                 new Response.ErrorListener() {
@@ -107,25 +80,19 @@ public class AuthActivity extends AppCompatActivity {
                         Toast.makeText(AuthActivity.this, "Error!", Toast.LENGTH_LONG).show();
                     }
                 }) {
-
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 Map<String, String> headers = new HashMap<String, String>();
                 System.out.println("headers");
                 headers.put("Content-Type", "application/json");
-
-                headers.put("Authorization", token);
-
+                headers.put("Authorization", ShareValues.getValue(AuthActivity.this, "token"));
                 return headers;
             }
         };
         queue.add(jsObjRequest);
-
-
     }
 
     public void login(View view) {
-
 
         Intent intent = new Intent(this, MainActivity.class);
 
@@ -155,9 +122,7 @@ public class AuthActivity extends AppCompatActivity {
             // handle exception
         }
 
-
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(
-                Request.Method.POST, url, jsonObject,
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
@@ -207,23 +172,17 @@ public class AuthActivity extends AppCompatActivity {
             // handle exception
         }
 
-
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(
-                Request.Method.POST, url, jsonObject,
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
                         System.out.println("Response: " + response.toString());
                         try {
-                            token = response.getString("token");
-                            Log.d(TAG, token);
-                            owner = response.getString("user_id");
-                            ShareValues.setValue("owner", owner);
-                            ShareValues.setValue("token", token);
+                            ShareValues.setValue(AuthActivity.this, "owner", response.getString("user_id"));
+                            ShareValues.setValue(AuthActivity.this, "token", response.getString("token"));
 
-                            Log.d("owner", ShareValues.getValue("owner", "null"));
-                            Log.d("token", ShareValues.getValue("token", "null"));
-
+                            Log.d("owner", ShareValues.getValue(AuthActivity.this, "owner"));
+                            Log.d("token", ShareValues.getValue(AuthActivity.this, "token"));
 
                             connect();
 
@@ -319,7 +278,7 @@ public class AuthActivity extends AppCompatActivity {
             spec.put("imei", telephonyManager.getDeviceId());
             spec.put("brand", Build.BRAND);
             spec.put("model", Build.MODEL);
-            spec.put("os_version", android.os.Build.VERSION.RELEASE);
+            spec.put("os_version", Build.VERSION.RELEASE);
             spec.put("cpu", Build.SUPPORTED_ABIS[0]);
             spec.put("avail_ram", memInfo.availMem / (1024 * 1024));
             spec.put("total_ram", memInfo.totalMem / (1024 * 1024));
@@ -329,8 +288,8 @@ public class AuthActivity extends AppCompatActivity {
             spec.put("total_disk", stat1.getTotalBytes());
 
             device.put("spec", spec);
-            // device.put("owner",ShareValues.getValue("owner","null"));
-            device.put("owner", owner);
+             //device.put("owner",ShareValues.getValue("owner","null"));
+            device.put("owner", ShareValues.getValue(AuthActivity.this, "owner"));
             device.put("status", "online");
 
         } catch (JSONException e) {
@@ -347,7 +306,6 @@ public class AuthActivity extends AppCompatActivity {
                     getInfos();
                 }
                 break;
-
             default:
                 break;
         }

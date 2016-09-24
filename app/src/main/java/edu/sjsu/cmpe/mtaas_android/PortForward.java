@@ -1,7 +1,6 @@
 package edu.sjsu.cmpe.mtaas_android;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.util.Log;
 
 import java.io.*;
@@ -20,7 +19,6 @@ public class PortForward {
 
     public static boolean init(Context context) {
        // settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        ShareValues.init(context);
         File ngrokFile = new File(context.getFilesDir(), "ngrok");
         if (!ngrokFile.exists()) {
             InputStream ngrokInputStream = null;
@@ -78,12 +76,10 @@ public class PortForward {
             if (line.contains("URL:tcp://")) {
                 ngrokURL = line.substring(line.indexOf("URL:tcp://") + 10, line.indexOf(" Proto:tcp"));
                 Log.d(TAG, ngrokURL);
-                SharedPreferences.Editor prefEditor = ShareValues.settings.edit();
-                prefEditor.putString("ngrok_url", ngrokURL);
-                prefEditor.apply();
+                ShareValues.setValue(context, "ngrok_url", ngrokURL);
                 return true;
             } else if (line.contains("limited to 1 simultaneous ngrok client session")) {
-                ngrokURL = ShareValues.settings.getString("ngrok_url", "null");
+                ngrokURL = ShareValues.getValue(context, "ngrok_url");
                 return true;
             }
         }
