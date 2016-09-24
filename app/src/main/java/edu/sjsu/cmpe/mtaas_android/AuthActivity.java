@@ -24,12 +24,9 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class AuthActivity extends AppCompatActivity {
 
@@ -44,6 +41,8 @@ public class AuthActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_auth);
+
+        PortForward.init(this);
 
         e_email = (EditText) findViewById(R.id.emailEditTxt);
         e_pwd = (EditText) findViewById(R.id.pwdEditTxt);
@@ -129,62 +128,49 @@ public class AuthActivity extends AppCompatActivity {
 
                     // Check if device is already registered
                     String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/api/v1/device?filter[spec.imei]=" + device.getJSONObject("spec").getString("imei");
-
-                    JsonObjectRequest getDeviceByIMEIRequest = new JsonObjectRequest(Request.Method.GET, url, null, future, future) {
-                        @Override
-                        public Map<String, String> getHeaders() throws AuthFailureError {
-                            Map<String, String> headers = new HashMap<>();
-                            headers.put("Content-Type", "application/json");
-                            headers.put("Authorization", ShareValues.getValue(AuthActivity.this, "token"));
-                            return headers;
-                        }
-                    };
-
-                    queue.add(getDeviceByIMEIRequest);
-
-                    JSONObject response = future.get(5, TimeUnit.SECONDS);
-
-                    int requestMethod = -1;
-
-                    JSONObject payload = new JSONObject();
+                    queue.add(getAPIRequest(Request.Method.GET, url, null, future, future));
+                    JSONObject response = future.get();
+                    future = RequestFuture.newFuture();
 
                     if (response.getInt("total") == 0) {
                         // register device
-                        requestMethod = Request.Method.POST;
                         url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/api/v1/device";
-                        payload = device;
+                        queue.add(getAPIRequest(Request.Method.POST, url, device, future, future));
+                        response = future.get();
+                        ShareValues.setValue(AuthActivity.this, "device_id", response.getJSONObject("payload").getString("_id"));
                     } else {
                         // update registered device status to online
                         JSONObject registeredDevice = response.getJSONArray("payload").getJSONObject(0);
                         if (registeredDevice.getString("status").equals("offline")) {
-                            requestMethod = Request.Method.PUT;
                             url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/api/v1/device/" + registeredDevice.getString("_id");
+                            JSONObject payload = new JSONObject();
                             payload.put("status", "online");
+                            queue.add(getAPIRequest(Request.Method.PUT, url, payload, future, future));
+                            future.get();
                         }
+                        ShareValues.setValue(AuthActivity.this, "device_id", registeredDevice.getString("_id"));
                     }
-
-                    JsonObjectRequest deviceRegisterRequest = new JsonObjectRequest(requestMethod, url, payload, future, future) {
-                        @Override
-                        public Map<String, String> getHeaders() throws AuthFailureError {
-                            Map<String, String> headers = new HashMap<>();
-                            headers.put("Content-Type", "application/json");
-                            headers.put("Authorization", ShareValues.getValue(AuthActivity.this, "token"));
-                            return headers;
-                        }
-                    };
-
-                    queue.add(deviceRegisterRequest);
-
-                    future.get();
 
                     Intent intent = new Intent(AuthActivity.this, MainActivity.class);
                     startActivity(intent);
 
-                } catch (InterruptedException | ExecutionException | JSONException | TimeoutException e) {
+                } catch (InterruptedException | ExecutionException | JSONException e) {
                     e.printStackTrace();
                 }
             }
         }).start();
+    }
+
+    public JsonObjectRequest getAPIRequest(int method, String url, JSONObject payload, Response.Listener listener, Response.ErrorListener errorListener) {
+        return new JsonObjectRequest(method, url, payload, listener, errorListener) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("Authorization", ShareValues.getValue(AuthActivity.this, "token"));
+                return headers;
+            }
+        };
     }
 
     public JSONObject getDeviceInfo() {
@@ -197,11 +183,17 @@ public class AuthActivity extends AppCompatActivity {
             spec.put("imei", telephonyManager.getDeviceId());
 
             spec.put("brand", Build.BRAND);
+            spec.put("cpu", Build.CPU_ABI);
+            spec.put("device", Build.DEVICE);
+            spec.put("hardware", Build.HARDWARE);
+            spec.put("id", Build.ID);
+            spec.put("manufacture", Build.MANUFACTURER);
             spec.put("model", Build.MODEL);
+            spec.put("product", Build.PRODUCT);
+            spec.put("serial", Build.SERIAL);
 
-            spec.put("os_version", Build.VERSION.RELEASE);
-
-            spec.put("cpu", Build.SUPPORTED_ABIS[0]);
+            spec.put("os_release", Build.VERSION.RELEASE);
+            spec.put("os_sdk", Build.VERSION.SDK_INT);
 
             ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
             spec.put("avail_ram", memInfo.availMem / (1024 * 1024));
@@ -238,64 +230,64 @@ public class AuthActivity extends AppCompatActivity {
         }
     }
 
-    public void printDeviceInfo() {
-        String str = "";
-        str = "OS Version: " + System.getProperty("os.version"); // OS version
-        System.out.println(str);
-
-        str = "Hardware: " + Build.HARDWARE;      // API Level
-        System.out.println(str);
-
-        str = "OS Build Version: " + android.os.Build.VERSION.RELEASE + "," + android.os.Build.VERSION.INCREMENTAL + "," + Build.SUPPORTED_ABIS[0]; // OS version
-        System.out.println(str);
-
-        str = "Brand: " + Build.BRAND; // OS version
-        System.out.println(str);
-
-        str = "Device: " + android.os.Build.DEVICE;           // Device
-        System.out.println(str);
-
-        str = "Model: " + android.os.Build.MODEL;            // Model
-        System.out.println(str);
-
-        str = "Product: " + android.os.Build.PRODUCT;
-        System.out.println(str);
-
-
-        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        str = "Device Id (IMEI): " + telephonyManager.getDeviceId();
-        System.out.println(str);
-
-        ActivityManager actManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
-        actManager.getMemoryInfo(memInfo);
-
-        long totalMemory = memInfo.availMem;
-        str = "Ram avail Memory: " + memInfo.availMem / (1024 * 1024);
-        System.out.println(str);
-
-        str = "Ram total Memory: " + memInfo.totalMem / (1024 * 1024);
-        System.out.println(str);
-
-        File path = Environment.getDataDirectory();
-        StatFs stat = new StatFs(path.getPath());
-        long inTotal = stat.getTotalBytes() / (1024 * 1024);
-        str = "Total RAM memory:" + inTotal;
-        System.out.println(str);
-
-        long inAvail = stat.getFreeBytes() / (1024 * 1024);
-        str = "Avail RAM memory:" + inAvail;
-        System.out.println(str);
-
-
-        StatFs stat1 = new StatFs(Environment.getExternalStorageDirectory().getPath());
-        long bytesTotal = (long) stat1.getTotalBytes() / (1024 * 1024);
-        str = "Total disk memory: " + bytesTotal;
-        System.out.println(str);
-
-        long bytesFree = (long) stat1.getFreeBytes() / (1024 * 1024);
-        str = "Avail disk memory: " + bytesFree;
-        System.out.println(str);
-
-    }
+    //public void printDeviceInfo() {
+    //    String str = "";
+    //    str = "OS Version: " + System.getProperty("os.version"); // OS version
+    //    System.out.println(str);
+    //
+    //    str = "Hardware: " + Build.HARDWARE;      // API Level
+    //    System.out.println(str);
+    //
+    //    str = "OS Build Version: " + android.os.Build.VERSION.RELEASE + "," + android.os.Build.VERSION.INCREMENTAL + "," + Build.SUPPORTED_ABIS[0]; // OS version
+    //    System.out.println(str);
+    //
+    //    str = "Brand: " + Build.BRAND; // OS version
+    //    System.out.println(str);
+    //
+    //    str = "Device: " + android.os.Build.DEVICE;           // Device
+    //    System.out.println(str);
+    //
+    //    str = "Model: " + android.os.Build.MODEL;            // Model
+    //    System.out.println(str);
+    //
+    //    str = "Product: " + android.os.Build.PRODUCT;
+    //    System.out.println(str);
+    //
+    //
+    //    TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+    //    str = "Device Id (IMEI): " + telephonyManager.getDeviceId();
+    //    System.out.println(str);
+    //
+    //    ActivityManager actManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+    //    ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+    //    actManager.getMemoryInfo(memInfo);
+    //
+    //    long totalMemory = memInfo.availMem;
+    //    str = "Ram avail Memory: " + memInfo.availMem / (1024 * 1024);
+    //    System.out.println(str);
+    //
+    //    str = "Ram total Memory: " + memInfo.totalMem / (1024 * 1024);
+    //    System.out.println(str);
+    //
+    //    File path = Environment.getDataDirectory();
+    //    StatFs stat = new StatFs(path.getPath());
+    //    long inTotal = stat.getTotalBytes() / (1024 * 1024);
+    //    str = "Total RAM memory:" + inTotal;
+    //    System.out.println(str);
+    //
+    //    long inAvail = stat.getFreeBytes() / (1024 * 1024);
+    //    str = "Avail RAM memory:" + inAvail;
+    //    System.out.println(str);
+    //
+    //
+    //    StatFs stat1 = new StatFs(Environment.getExternalStorageDirectory().getPath());
+    //    long bytesTotal = (long) stat1.getTotalBytes() / (1024 * 1024);
+    //    str = "Total disk memory: " + bytesTotal;
+    //    System.out.println(str);
+    //
+    //    long bytesFree = (long) stat1.getFreeBytes() / (1024 * 1024);
+    //    str = "Avail disk memory: " + bytesFree;
+    //    System.out.println(str);
+    //
+    //}
 }
