@@ -40,18 +40,17 @@ public class AuthActivity extends AppCompatActivity {
     private TextView txtView;
     private EditText e_email;
     private EditText e_pwd;
-    private String email="";
-    private String pwd="";
+    private String email = "";
+    private String pwd = "";
 
     private final static String TAG = "AuthActivity";
-    private final static JSONObject device=new JSONObject();
-
+    private final static JSONObject device = new JSONObject();
 
 
     // public static final String PREFS_NAME = "TokenPrefsFile";
     public static String token = "null";
     public static String owner = "null";
-   // private static SharedPreferences settings;
+    // private static SharedPreferences settings;
 
     public static final int REQUEST_READ_PHONE_STATE = 1;
 
@@ -85,8 +84,8 @@ public class AuthActivity extends AppCompatActivity {
 
         String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/api/v1/device";
 
-        Log.d("owner", ShareValues.getValue("owner","null"));
-        Log.d("token", ShareValues.getValue("token","null"));
+        Log.d("owner", ShareValues.getValue("owner", "null"));
+        Log.d("token", ShareValues.getValue("token", "null"));
         Log.d("owner", owner);
         Log.d("token", token);
 
@@ -123,7 +122,6 @@ public class AuthActivity extends AppCompatActivity {
         queue.add(jsObjRequest);
 
 
-
     }
 
     public void login(View view) {
@@ -140,13 +138,13 @@ public class AuthActivity extends AppCompatActivity {
 
     public void register(View view) {
 
-       // callAPI()
+        // callAPI()
 
         RequestQueue queue = Volley.newRequestQueue(this);
 
         String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/register";
 
-        boolean flag=false;
+        boolean flag = false;
 
         final JSONObject jsonObject = new JSONObject();
         try {
@@ -193,14 +191,13 @@ public class AuthActivity extends AppCompatActivity {
     }
 
 
-
-    public boolean validate( String email, String pwd) {
+    public boolean validate(String email, String pwd) {
         // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(this);
 
         String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/login";
 
-        boolean flag=false;
+        boolean flag = false;
 
         final JSONObject jsonObject = new JSONObject();
         try {
@@ -219,14 +216,14 @@ public class AuthActivity extends AppCompatActivity {
                     public void onResponse(JSONObject response) {
                         System.out.println("Response: " + response.toString());
                         try {
-                                token=response.getString("token");
-                                Log.d(TAG, token);
-                                owner=response.getString("user_id");
-                                ShareValues.setValue("owner", owner);
-                                ShareValues.setValue("token", token);
+                            token = response.getString("token");
+                            Log.d(TAG, token);
+                            owner = response.getString("user_id");
+                            ShareValues.setValue("owner", owner);
+                            ShareValues.setValue("token", token);
 
-                                Log.d("owner", ShareValues.getValue("owner","null"));
-                                Log.d("token", ShareValues.getValue("token","null"));
+                            Log.d("owner", ShareValues.getValue("owner", "null"));
+                            Log.d("token", ShareValues.getValue("token", "null"));
 
 
                             connect();
@@ -316,7 +313,7 @@ public class AuthActivity extends AppCompatActivity {
         str = "Avail disk memory: " + bytesFree;
         System.out.println(str);
 
-        final JSONObject spec=new JSONObject();
+        final JSONObject spec = new JSONObject();
         //final JSONObject device=new JSONObject();
 
         try {
@@ -324,19 +321,19 @@ public class AuthActivity extends AppCompatActivity {
             spec.put("imei", telephonyManager.getDeviceId());
             spec.put("brand", Build.BRAND);
             spec.put("model", Build.MODEL);
-            spec.put("os_version",android.os.Build.VERSION.RELEASE);
+            spec.put("os_version", android.os.Build.VERSION.RELEASE);
             spec.put("cpu", Build.SUPPORTED_ABIS[0]);
             spec.put("avail_ram", memInfo.availMem / (1024 * 1024));
             spec.put("total_ram", memInfo.totalMem / (1024 * 1024));
             spec.put("avail_internal_storage", stat.getFreeBytes() / (1024 * 1024));
             spec.put("total_internal_storage", stat.getTotalBytes() / (1024 * 1024));
             spec.put("avail_disk", stat1.getFreeBytes());
-            spec.put("total_disk", stat1.getTotalBytes() );
+            spec.put("total_disk", stat1.getTotalBytes());
 
-            device.put("spec",spec);
-           // device.put("owner",ShareValues.getValue("owner","null"));
-            device.put("owner",owner);
-            device.put("status","online");
+            device.put("spec", spec);
+            // device.put("owner",ShareValues.getValue("owner","null"));
+            device.put("owner", owner);
+            device.put("status", "online");
 
         } catch (JSONException e) {
             // handle exception
