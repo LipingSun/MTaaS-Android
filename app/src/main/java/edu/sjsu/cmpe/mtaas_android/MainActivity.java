@@ -12,6 +12,14 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.android.volley.*;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private final static String TAG = "MainActivity";
@@ -25,26 +33,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //RequestQueue requestQueue = Volley.newRequestQueue(this);
-        //String url = "http://cdn.flowplayer.org/272367/129785.json";
-        ////String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com";
-        //JsonObjectRequest testRequest = new JsonObjectRequest(Request.Method.GET, url, null,
-        //        new Response.Listener<JSONObject>() {
-        //            @Override
-        //            public void onResponse(JSONObject response) {
-        //                Log.d(TAG, response.toString());
-        //            }
-        //        },
-        //        new Response.ErrorListener() {
-        //            @Override
-        //            public void onErrorResponse(VolleyError error) {
-        //                Log.e(TAG, error.toString());
-        //            }
-        //        }
-        //);
-        //requestQueue.add(testRequest);
+
         initVal();
-        //PortForward.init(MainActivity.this);
     }
 
     @Override
@@ -140,11 +130,45 @@ public class MainActivity extends AppCompatActivity {
                     toggleStatus = !toggleStatus;
                     setToggleStatus(toggleStatus);
 
-                    if (toggleStatus) {
-                        Toast.makeText(MainActivity.this, "adb wifi service started", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(MainActivity.this, "adb wifi service stopped", Toast.LENGTH_SHORT).show();
+                    String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/api/v1/device/" + ShareValues.getValue(MainActivity.this, "device_id");
+                    JSONObject payload = new JSONObject();
+                    try {
+                        if (toggleStatus) {
+                            payload.put("status", "available");
+                            Toast.makeText(MainActivity.this, "service started", Toast.LENGTH_SHORT).show();
+                        } else {
+                            payload.put("status", "online");
+                            Toast.makeText(MainActivity.this, "service stopped", Toast.LENGTH_SHORT).show();
+                        }
+                        payload.put("adb_uri", ShareValues.getValue(MainActivity.this, "ngrok_url"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
+
+                    JsonObjectRequest jsonObjRequest = new JsonObjectRequest(Request.Method.PUT, url, payload,
+                            new Response.Listener<JSONObject>() {
+                                @Override
+                                public void onResponse(JSONObject response) {
+                                    Log.d(TAG, response.toString());
+                                }
+                            },
+                            new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    Log.e(TAG, error.toString());
+                                }
+                            }) {
+                        @Override
+                        public Map<String, String> getHeaders() throws AuthFailureError {
+                            Map<String, String> headers = new HashMap<>();
+                            headers.put("Content-Type", "application/json");
+                            headers.put("Authorization", ShareValues.getValue(MainActivity.this, "token"));
+                            return headers;
+                        }
+                    };
+
+                    RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+                    requestQueue.add(jsonObjRequest);
                 } else {
                     // failed
                     Toast.makeText(MainActivity.this, "something wrong", Toast.LENGTH_SHORT).show();
