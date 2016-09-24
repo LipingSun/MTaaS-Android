@@ -16,10 +16,10 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 import com.android.volley.*;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -27,17 +27,16 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class AuthActivity extends AppCompatActivity {
 
-    private TextView txtView;
     private EditText e_email;
     private EditText e_pwd;
-    private String email = "";
-    private String pwd = "";
 
     private final static String TAG = "AuthActivity";
-    private final static JSONObject device = new JSONObject();
 
     public static final int REQUEST_READ_PHONE_STATE = 1;
 
@@ -48,131 +47,30 @@ public class AuthActivity extends AppCompatActivity {
 
         e_email = (EditText) findViewById(R.id.emailEditTxt);
         e_pwd = (EditText) findViewById(R.id.pwdEditTxt);
-
-        System.out.println("start");
     }
 
-    public void connect() {
-        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE);
+    public void login(View v) {
+        authenticate("http://mtaas-worker.us-west-2.elasticbeanstalk.com/login");
+    }
 
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, REQUEST_READ_PHONE_STATE);
-        } else {
-            getInfos();
-        }
+    public void register(View v) {
+        authenticate("http://mtaas-worker.us-west-2.elasticbeanstalk.com/register");
+    }
+
+    public void authenticate(String url) {
 
         RequestQueue queue = Volley.newRequestQueue(this);
-
-        String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/api/v1/device";
-
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.POST, url, device,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        System.out.println("Response: " + response.toString());
-                        Toast.makeText(AuthActivity.this, "connected to server", Toast.LENGTH_LONG).show();
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        System.out.println("NOT WORK");
-                        Toast.makeText(AuthActivity.this, "Error!", Toast.LENGTH_LONG).show();
-                    }
-                }) {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> headers = new HashMap<String, String>();
-                System.out.println("headers");
-                headers.put("Content-Type", "application/json");
-                headers.put("Authorization", ShareValues.getValue(AuthActivity.this, "token"));
-                return headers;
-            }
-        };
-        queue.add(jsObjRequest);
-    }
-
-    public void login(View view) {
-
-        Intent intent = new Intent(this, MainActivity.class);
-
-        Log.d(TAG, "Login");
-
-        if (validate(e_email.getText().toString(), e_pwd.getText().toString())) {
-            startActivity(intent);
-        }
-    }
-
-    public void register(View view) {
-
-        // callAPI()
-
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-        String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/register";
-
-        boolean flag = false;
 
         final JSONObject jsonObject = new JSONObject();
+
         try {
-            Log.d(TAG, "Register");
             jsonObject.put("username", e_email.getText().toString());
             jsonObject.put("password", e_pwd.getText().toString());
         } catch (JSONException e) {
             // handle exception
         }
 
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        System.out.println("Response: " + response.toString());
-                        Toast.makeText(AuthActivity.this, "Register successfully, Please use this account to login!", Toast.LENGTH_LONG).show();
-
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        System.out.println("NOT WORK");
-                        Toast.makeText(AuthActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                }) {
-            @Override
-            protected Map<String, String> getParams() throws AuthFailureError {
-                Map<String, String> params = new HashMap<String, String>();
-                return params;
-            }
-
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> headers = new HashMap<String, String>();
-                System.out.println("headers");
-                headers.put("Content-Type", "application/json");
-                return headers;
-            }
-        };
-        queue.add(jsObjRequest);
-    }
-
-    public boolean validate(String email, String pwd) {
-        // Instantiate the RequestQueue.
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-        String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/login";
-
-        boolean flag = false;
-
-        final JSONObject jsonObject = new JSONObject();
-        try {
-            Log.d(TAG, "Auth");
-            jsonObject.put("username", email);
-            jsonObject.put("password", pwd);
-        } catch (JSONException e) {
-            // handle exception
-        }
-
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
+        JsonObjectRequest jsonObjRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
@@ -184,11 +82,16 @@ public class AuthActivity extends AppCompatActivity {
                             Log.d("owner", ShareValues.getValue(AuthActivity.this, "owner"));
                             Log.d("token", ShareValues.getValue(AuthActivity.this, "token"));
 
-                            connect();
+                            Toast.makeText(AuthActivity.this, "Authentication Succeed!", Toast.LENGTH_LONG).show();
 
+                            if (ContextCompat.checkSelfPermission(AuthActivity.this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(AuthActivity.this, new String[]{Manifest.permission.READ_PHONE_STATE}, REQUEST_READ_PHONE_STATE);
+                            } else {
+                                registerDevice();
+                            }
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            Toast.makeText(AuthActivity.this, "There is some error here", Toast.LENGTH_LONG).show();
+                            Toast.makeText(AuthActivity.this, "Authentication Failed!", Toast.LENGTH_LONG).show();
                         }
                     }
                 },
@@ -207,11 +110,135 @@ public class AuthActivity extends AppCompatActivity {
                 return headers;
             }
         };
-        queue.add(jsObjRequest);
-        return true;
+
+        queue.add(jsonObjRequest);
+
     }
 
-    public void getInfos() {
+    public void registerDevice() {
+
+        new Thread(new Runnable() {
+            public void run() {
+                RequestQueue queue = Volley.newRequestQueue(AuthActivity.this);
+
+                RequestFuture<JSONObject> future = RequestFuture.newFuture();
+
+                JSONObject device = getDeviceInfo();
+
+                try {
+
+                    // Check if device is already registered
+                    String url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/api/v1/device?filter[spec.imei]=" + device.getJSONObject("spec").getString("imei");
+
+                    JsonObjectRequest getDeviceByIMEIRequest = new JsonObjectRequest(Request.Method.GET, url, null, future, future) {
+                        @Override
+                        public Map<String, String> getHeaders() throws AuthFailureError {
+                            Map<String, String> headers = new HashMap<>();
+                            headers.put("Content-Type", "application/json");
+                            headers.put("Authorization", ShareValues.getValue(AuthActivity.this, "token"));
+                            return headers;
+                        }
+                    };
+
+                    queue.add(getDeviceByIMEIRequest);
+
+                    JSONObject response = future.get(5, TimeUnit.SECONDS);
+
+                    int requestMethod = -1;
+
+                    JSONObject payload = new JSONObject();
+
+                    if (response.getInt("total") == 0) {
+                        // register device
+                        requestMethod = Request.Method.POST;
+                        url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/api/v1/device";
+                        payload = device;
+                    } else {
+                        // update registered device status to online
+                        JSONObject registeredDevice = response.getJSONArray("payload").getJSONObject(0);
+                        if (registeredDevice.getString("status").equals("offline")) {
+                            requestMethod = Request.Method.PUT;
+                            url = "http://mtaas-worker.us-west-2.elasticbeanstalk.com/api/v1/device/" + registeredDevice.getString("_id");
+                            payload.put("status", "online");
+                        }
+                    }
+
+                    JsonObjectRequest deviceRegisterRequest = new JsonObjectRequest(requestMethod, url, payload, future, future) {
+                        @Override
+                        public Map<String, String> getHeaders() throws AuthFailureError {
+                            Map<String, String> headers = new HashMap<>();
+                            headers.put("Content-Type", "application/json");
+                            headers.put("Authorization", ShareValues.getValue(AuthActivity.this, "token"));
+                            return headers;
+                        }
+                    };
+
+                    queue.add(deviceRegisterRequest);
+
+                    future.get();
+
+                    Intent intent = new Intent(AuthActivity.this, MainActivity.class);
+                    startActivity(intent);
+
+                } catch (InterruptedException | ExecutionException | JSONException | TimeoutException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    public JSONObject getDeviceInfo() {
+
+        JSONObject spec = new JSONObject();
+        JSONObject device = new JSONObject();
+
+        try {
+            TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+            spec.put("imei", telephonyManager.getDeviceId());
+
+            spec.put("brand", Build.BRAND);
+            spec.put("model", Build.MODEL);
+
+            spec.put("os_version", Build.VERSION.RELEASE);
+
+            spec.put("cpu", Build.SUPPORTED_ABIS[0]);
+
+            ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+            spec.put("avail_ram", memInfo.availMem / (1024 * 1024));
+            spec.put("total_ram", memInfo.totalMem / (1024 * 1024));
+
+            StatFs InternalStorageStat = new StatFs(Environment.getDataDirectory().getPath());
+            spec.put("avail_internal_storage", InternalStorageStat.getFreeBytes() / (1024 * 1024));
+            spec.put("total_internal_storage", InternalStorageStat.getTotalBytes() / (1024 * 1024));
+
+            StatFs ExternalStorageStat = new StatFs(Environment.getExternalStorageDirectory().getPath());
+            spec.put("avail_disk", ExternalStorageStat.getFreeBytes());
+            spec.put("total_disk", ExternalStorageStat.getTotalBytes());
+
+            device.put("spec", spec);
+            device.put("status", "online");
+            device.put("owner", ShareValues.getValue(AuthActivity.this, "owner"));
+
+        } catch (JSONException e) {
+            // handle exception
+        }
+        return device;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_READ_PHONE_STATE:
+                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    registerDevice();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void printDeviceInfo() {
         String str = "";
         str = "OS Version: " + System.getProperty("os.version"); // OS version
         System.out.println(str);
@@ -270,44 +297,5 @@ public class AuthActivity extends AppCompatActivity {
         str = "Avail disk memory: " + bytesFree;
         System.out.println(str);
 
-        final JSONObject spec = new JSONObject();
-        //final JSONObject device=new JSONObject();
-
-        try {
-            Log.d(TAG, "Specs");
-            spec.put("imei", telephonyManager.getDeviceId());
-            spec.put("brand", Build.BRAND);
-            spec.put("model", Build.MODEL);
-            spec.put("os_version", Build.VERSION.RELEASE);
-            spec.put("cpu", Build.SUPPORTED_ABIS[0]);
-            spec.put("avail_ram", memInfo.availMem / (1024 * 1024));
-            spec.put("total_ram", memInfo.totalMem / (1024 * 1024));
-            spec.put("avail_internal_storage", stat.getFreeBytes() / (1024 * 1024));
-            spec.put("total_internal_storage", stat.getTotalBytes() / (1024 * 1024));
-            spec.put("avail_disk", stat1.getFreeBytes());
-            spec.put("total_disk", stat1.getTotalBytes());
-
-            device.put("spec", spec);
-             //device.put("owner",ShareValues.getValue("owner","null"));
-            device.put("owner", ShareValues.getValue(AuthActivity.this, "owner"));
-            device.put("status", "online");
-
-        } catch (JSONException e) {
-            // handle exception
-        }
-        //return device;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_READ_PHONE_STATE:
-                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    getInfos();
-                }
-                break;
-            default:
-                break;
-        }
     }
 }
